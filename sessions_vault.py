@@ -5,6 +5,7 @@
   sessions-vault pick      pick a session (fzf) and copy its resume command
   sessions-vault restore   download everything from S3 into ~ (new/reinstalled machine)
   sessions-vault catalog   rebuild the local catalog only
+  sessions-vault open      show the full catalog as a table in $PAGER (default: less -S)
 
 Config: SESSIONS_VAULT_BUCKET (e.g. s3://my-bucket) and optional AWS_PROFILE,
 read from ~/.config/sessions-vault/env.
@@ -194,8 +195,21 @@ def pick():
     print(command + ("\n(copied to clipboard)" if copied else ""))
 
 
+def open_catalog():
+    build_catalog()
+    rows = [["DATE", "TOOL", "PROJECT", "TITLE", "COMMAND"]]
+    rows += [line.split("\t") for line in CATALOG_TSV.read_text().splitlines()]
+    widths = [max(len(r[i]) for r in rows) for i in range(4)]
+    text = "\n".join("  ".join(c.ljust(w) for c, w in zip(r, widths)) + "  " + r[4] for r in rows) + "\n"
+    if not sys.stdout.isatty():
+        sys.stdout.write(text)
+        return
+    subprocess.run(shlex.split(os.environ.get("PAGER", "less -S")), input=text, text=True, check=False)
+
+
 if __name__ == "__main__":
-    actions = {"backup": backup, "restore": restore, "pick": pick, "catalog": lambda: print(build_catalog())}
+    actions = {"backup": backup, "restore": restore, "pick": pick, "open": open_catalog,
+               "catalog": lambda: print(build_catalog())}
     action = sys.argv[1] if len(sys.argv) > 1 else ""
     if action not in actions:
         sys.exit(__doc__)

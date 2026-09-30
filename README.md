@@ -56,6 +56,7 @@ sessions-vault backup                              # first full backup (optional
 ```bash
 sessions                     # browse the catalog; Enter copies the resume command
 sessions-vault backup        # run a backup now
+sessions-vault open          # show the full catalog as a table ($PAGER, default less -S)
 sessions-vault catalog       # rebuild the local catalog only
 sessions-vault restore       # download everything from S3 into ~
 ```
