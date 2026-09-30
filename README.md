@@ -99,6 +99,28 @@ s3://<bucket>/
 | Backup interval | `./install.sh <bucket> <interval>` | `15min` |
 | Bucket name / region | `./setup-bucket.sh <name> <region>` | `agent-sessions-vault-<account-id>` / `us-east-1` |
 
+## Scheduling
+
+The `systemd --user` timer runs a backup **5 minutes after boot** and then **every 15 minutes** after the previous run finishes. Missed runs (machine off or asleep) are caught up on next start (`Persistent=true`).
+
+```bash
+systemctl --user list-timers sessions-vault.timer   # next/last run
+systemctl --user stop sessions-vault.timer          # pause
+systemctl --user start sessions-vault.timer         # resume
+./install.sh s3://<bucket> 1h                       # change the interval
+loginctl enable-linger "$USER"                      # keep running while logged out
+```
+
+## Installed files
+
+| Path | Purpose |
+|---|---|
+| `~/.local/bin/sessions-vault` | Symlink to `sessions_vault.py` in the cloned repo |
+| `~/.config/sessions-vault/env` | Bucket and AWS profile (`chmod 600`) |
+| `~/.config/systemd/user/sessions-vault.{service,timer}` | Scheduled backup |
+| `~/.cache/sessions-vault/` | `manifest.json` (upload cache), `catalog.tsv`, `catalog.jsonl` |
+| `~/.zshrc`, `~/.bashrc` | `alias sessions='sessions-vault pick'` |
+
 ## Restore on a new machine
 
 ```bash
