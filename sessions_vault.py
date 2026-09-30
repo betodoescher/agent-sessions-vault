@@ -10,7 +10,7 @@
 Config: SESSIONS_VAULT_BUCKET (e.g. s3://my-bucket) and optional AWS_PROFILE,
 read from ~/.config/sessions-vault/env.
 """
-import json, os, shlex, shutil, sqlite3, subprocess, sys, tempfile
+import json, os, shlex, shutil, signal, sqlite3, subprocess, sys, tempfile
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -202,6 +202,7 @@ def open_catalog():
     widths = [max(len(r[i]) for r in rows) for i in range(4)]
     text = "\n".join("  ".join(c.ljust(w) for c, w in zip(r, widths)) + "  " + r[4] for r in rows) + "\n"
     if not sys.stdout.isatty():
+        signal.signal(signal.SIGPIPE, signal.SIG_DFL)  # quiet exit when piped to head/grep
         sys.stdout.write(text)
         return
     subprocess.run(shlex.split(os.environ.get("PAGER", "less -S")), input=text, text=True, check=False)
