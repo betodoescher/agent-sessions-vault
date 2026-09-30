@@ -67,6 +67,8 @@ Search the catalog without `fzf`:
 grep -i "migration" ~/.cache/sessions-vault/catalog.tsv | column -t -s$'\t'
 ```
 
+`catalog.tsv` columns: `DATE`, `TOOL`, `PROJECT`, `TITLE`, `RESUME` (e.g. `agent --resume=<uuid>`), `COMMAND` (`cd <project> && <resume>`, ready to paste).
+
 ## How it works
 
 ```

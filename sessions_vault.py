@@ -97,8 +97,9 @@ def build_catalog():
         row["command"] = f"cd {shlex.quote(row['cwd'])} && {row['resume']}" if row["cwd"] else row["resume"]
     CACHE.mkdir(parents=True, exist_ok=True)
     CATALOG.write_text("".join(json.dumps(r, ensure_ascii=False) + "\n" for r in rows))
-    CATALOG_TSV.write_text("".join(
-        f"{(r['updated'] or '')[:16].replace('T', ' ')}\t{r['tool']}\t{r['project']}\t{r['title']}\t{r['command']}\n"
+    CATALOG_TSV.write_text("DATE\tTOOL\tPROJECT\tTITLE\tRESUME\tCOMMAND\n" + "".join(
+        f"{(r['updated'] or '')[:16].replace('T', ' ')}\t{r['tool']}\t{r['project']}\t{r['title']}"
+        f"\t{r['resume']}\t{r['command']}\n"
         for r in rows))
     return len(rows)
 
@@ -185,22 +186,21 @@ def pick():
         sys.exit("fzf not found: install it (e.g. sudo apt install fzf)")
     result = subprocess.run(
         ["fzf", "--delimiter=\t", "--with-nth=1,2,3,4", "--tiebreak=index", "--no-hscroll",
-         "--header=date | tool | project | title   (Enter copies the command)",
-         "--preview=echo {5}", "--preview-window=down,3,wrap"],
+         "--header-lines=1", "--header=Enter copies the command",
+         "--preview=echo {6}", "--preview-window=down,3,wrap"],
         stdin=CATALOG_TSV.open(), stdout=subprocess.PIPE, text=True)
     if result.returncode != 0 or not result.stdout.strip():
         return
-    command = result.stdout.rstrip("\n").split("\t")[4]
+    command = result.stdout.rstrip("\n").split("\t")[5]
     copied = copy_to_clipboard(command)
     print(command + ("\n(copied to clipboard)" if copied else ""))
 
 
 def open_catalog():
     build_catalog()
-    rows = [["DATE", "TOOL", "PROJECT", "TITLE", "COMMAND"]]
-    rows += [line.split("\t") for line in CATALOG_TSV.read_text().splitlines()]
-    widths = [max(len(r[i]) for r in rows) for i in range(4)]
-    text = "\n".join("  ".join(c.ljust(w) for c, w in zip(r, widths)) + "  " + r[4] for r in rows) + "\n"
+    rows = [line.split("\t") for line in CATALOG_TSV.read_text().splitlines()]
+    widths = [max(len(r[i]) for r in rows) for i in range(5)]
+    text = "\n".join("  ".join(c.ljust(w) for c, w in zip(r, widths)) + "  " + r[5] for r in rows) + "\n"
     if not sys.stdout.isatty():
         signal.signal(signal.SIGPIPE, signal.SIG_DFL)  # quiet exit when piped to head/grep
         sys.stdout.write(text)
